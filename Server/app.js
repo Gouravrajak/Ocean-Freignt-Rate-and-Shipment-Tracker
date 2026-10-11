@@ -18,7 +18,6 @@ import express from "express";
 import cors from "cors";
 import fs from "node:fs";
 import bcrypt from "bcrypt";
-import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import { randomBytes, timingSafeEqual } from "node:crypto";
