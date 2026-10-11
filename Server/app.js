@@ -1,21 +1,24 @@
+import dotenv from "dotenv";
+import path from "node:path";
+const loadedEnvironment = dotenv.config({ path: "./.env" });
+
+
+
 import express from "express";
 import cors from "cors";
 import fs from "node:fs";
-import path from "node:path";
+import bcrypt from "bcrypt";
 import { fileURLToPath } from "node:url";
 import mongoose from "mongoose";
-import dotenv from "dotenv";
-import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { randomBytes, timingSafeEqual } from "node:crypto";
 import { sendEmail, isMailConfigured } from "./services/mailer.js";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const loadedEnvironment = dotenv.config({ path: path.join(here, ".env") });
 const adminRegistrationKey = String(
   process.env.ADMIN_REGISTRATION_KEY ||
-    loadedEnvironment.parsed?.ADMIN_REGISTRATION_KEY ||
-    "",
+  loadedEnvironment.parsed?.ADMIN_REGISTRATION_KEY ||
+  "",
 ).trim();
 const jwtSecret = process.env.JWT_SECRET || randomBytes(32).toString("hex");
 const app = express();
