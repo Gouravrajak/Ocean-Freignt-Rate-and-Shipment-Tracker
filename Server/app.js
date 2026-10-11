@@ -110,6 +110,32 @@ const User = mongoose.models.User || mongoose.model("User", UserSchema);
 const localUsers = [];
 
 const mongoConnected = () => mongoose.connection.readyState === 1;
+let connectionPromise = null;
+
+async function connectDB() {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+
+  if (!connectionPromise) {
+    const mongoUri =
+      process.env.MONGODB_URI || process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      throw new Error("MongoDB URI is missing");
+    }
+
+    connectionPromise = mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000,
+      maxPoolSize: 5
+    }).catch((error) => {
+      connectionPromise = null;
+      throw error;
+    });
+  }
+
+  await connectionPromise;
+}
 const loadRates = () => Rate.find().lean();
 const loadShipments = () => Shipment.find().lean();
 
@@ -214,10 +240,17 @@ function authenticate(req, res, next) {
   }
 }
 
-function requireDatabase(_req, res, next) {
-  if (!mongoConnected())
-    return res.status(503).json({ error: "MongoDB is unavailable. Workspace data cannot be loaded." });
-  next();
+async function requireDatabase(req, res, next) {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("MongoDB connection error:", error.message);
+
+    res.status(503).json({
+      error: "Database connection failed. Check server logs."
+    });
+  }
 }
 
 function requireAdmin(req, res, next) {
@@ -717,30 +750,14 @@ app.use((err, _req, res, _next) => {
 });
 
 export async function start() {
-  const mongoUri =
-    process.env.MONGODB_URI || process.env.MONGO_URI;
+  await connectDB();
 
-  if (!mongoUri) {
-    throw new Error("MongoDB URI is missing!");
-  }
+  await seedCsvData();
+  await seedConfiguredUsers();
 
-  try {
-    await mongoose.connect(mongoUri, {
-      serverSelectionTimeoutMS: 10000
-    });
+  console.log("MongoDB connected successfully");
 
-    console.log("MongoDB connected successfully!");
-    console.log("MongoDB Host:", mongoose.connection.host);
-
-    await seedCsvData();
-    await seedConfiguredUsers();
-
-    return app;
-
-  } catch (error) {
-    console.error("MongoDB connection failed:", error.message);
-    throw error;
-  }
+  return app;
 }
 
 export default app;
