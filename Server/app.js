@@ -717,14 +717,30 @@ app.use((err, _req, res, _next) => {
 });
 
 export async function start() {
-  const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URI;
+  const mongoUri =
+    process.env.MONGODB_URI || process.env.MONGO_URI;
+
   if (!mongoUri) {
-    throw new Error("Set MONGO_URI or MONGODB_URI in Server/.env to start the MongoDB-backed app.");
+    throw new Error("MongoDB URI is missing!");
   }
-  await mongoose.connect(mongoUri);
-  await seedCsvData();
-  await seedConfiguredUsers();
-  console.log(`Connected to MongoDB; loaded ${rates.length} rates and ${shipments.length} shipments. Connections Host :: ${mongoose.connection.host}`);
-  return app;
+
+  try {
+    await mongoose.connect(mongoUri, {
+      serverSelectionTimeoutMS: 10000
+    });
+
+    console.log("MongoDB connected successfully!");
+    console.log("MongoDB Host:", mongoose.connection.host);
+
+    await seedCsvData();
+    await seedConfiguredUsers();
+
+    return app;
+
+  } catch (error) {
+    console.error("MongoDB connection failed:", error.message);
+    throw error;
+  }
 }
+
 export default app;
