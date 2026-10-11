@@ -1,6 +1,6 @@
 import dotenv from "dotenv";
 import path from "node:path";
-const loadedEnvironment = dotenv.config({ path: "./.env" });
+const loadedEnvironment = dotenv.config({});
 
 
 
@@ -715,7 +715,7 @@ export async function start() {
   await mongoose.connect(mongoUri);
   await seedCsvData();
   await seedConfiguredUsers();
-  console.log(`Connected to MongoDB; loaded ${rates.length} rates and ${shipments.length} shipments`);
+  console.log(`Connected to MongoDB; loaded ${rates.length} rates and ${shipments.length} shipments. Connections Host :: ${mongoose.connection.host}`);
   return app;
 }
 export default app;
